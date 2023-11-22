@@ -1,6 +1,3 @@
-## All code functions and image transformations are in mainCode.py
-### Author: Efren Flores
-
 import pygame
 import cv2
 import sys
@@ -87,7 +84,7 @@ def display_images():
 
     # Display original image on the left only if a type of sight is selected
     if current_animal_sight:
-        screen.blit(load_image(animal_sight_images[current_animal_sight]), (50, 50))
+        display_original_image(animal_sight_images[current_animal_sight])
 
     # Display animal sight image on the right
     if current_animal_sight:
