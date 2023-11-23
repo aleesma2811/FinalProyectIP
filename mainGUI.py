@@ -71,6 +71,8 @@ def display_upload_image():
     root = Tk()
     root.withdraw()
     image_path = filedialog.askopenfilename()
+    root.destroy()  # Close the Tkinter window
+
     if image_path:
         original_image, transformed_image = transform_image(image_path)
         display_images(original_image, transformed_image)
@@ -103,23 +105,37 @@ def display_webcam():
         pygame.surfarray.blit_array(transformed_image, np.swapaxes(transformed_frame, 0, 1))
         pygame.display.flip()
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # Break the loop if 'q' key is pressed or menu is not active
+        if cv2.waitKey(1) & 0xFF == ord('q') or not menu_active:
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
+# Flag to track whether to display the main menu
+menu_active = True
+
 # Function to handle mouse clicks
 def handle_mouse_click(position):
-    if 50 <= position[0] <= 50 + text_default_images.get_width() and 200 <= position[1] <= 200 + text_default_images.get_height():
-        display_default_images()
-    elif 50 <= position[0] <= 50 + text_upload_images.get_width() and 300 <= position[1] <= 300 + text_upload_images.get_height():
-        display_upload_image()
-    elif 50 <= position[0] <= 50 + text_webcam.get_width() and 400 <= position[1] <= 400 + text_webcam.get_height():
-        display_webcam()
-    elif 50 <= position[0] <= 50 + text_exit.get_width() and 500 <= position[1] <= 500 + text_exit.get_height():
-        pygame.quit()
-        sys.exit()
+    global menu_active
+    if not menu_active:
+        # If not in the menu, check for the "Return to Menu" button
+        if 600 <= position[0] <= 750 and 500 <= position[1] <= 540:
+            menu_active = True  # Set back to True when returning to the menu
+    else:
+        # If in the menu, check for other options
+        if 50 <= position[0] <= 50 + text_default_images.get_width() and 200 <= position[1] <= 200 + text_default_images.get_height():
+            display_default_images()
+            menu_active = False
+        elif 50 <= position[0] <= 50 + text_upload_images.get_width() and 300 <= position[1] <= 300 + text_upload_images.get_height():
+            display_upload_image()
+            menu_active = False
+        elif 50 <= position[0] <= 50 + text_webcam.get_width() and 400 <= position[1] <= 400 + text_webcam.get_height():
+            display_webcam()
+            menu_active = False
+        elif 600 <= position[0] <= 750 and 500 <= position[1] <= 540:
+            # "Return to Menu" button is clicked, set menu_active to True
+            menu_active = True
 
 # Function to display the menu
 def display_menu():
@@ -135,29 +151,32 @@ def display_menu():
 
     pygame.display.flip()
 
-# Function to handle image transformation
 def transform_image(image_path):
     original_image = pygame.image.load(image_path)
     original_image = pygame.transform.scale(original_image, (400, 400))
-    
+
+    # Convert the image to a NumPy array
+    original_array = pygame.surfarray.array3d(original_image)
+
     if animal_sight_type == "Dog":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_dog_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_dog_sight(original_array), 0, 1))
     elif animal_sight_type == "Cat":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_cat_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_cat_sight(original_array), 0, 1))
     elif animal_sight_type == "Bird":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bird_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bird_sight(original_array), 0, 1))
     elif animal_sight_type == "Bee":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bee_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bee_sight(original_array), 0, 1))
     elif animal_sight_type == "Bat":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bat_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bat_sight(original_array), 0, 1))
     elif animal_sight_type == "Crab":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_crab_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_crab_sight(original_array), 0, 1))
     elif animal_sight_type == "Snake":
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_snake_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_snake_sight(original_array), 0, 1))
     else:
-        transformed_image = pygame.surfarray.make_surface(np.swapaxes(original_image, 0, 1))
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(original_array, 0, 1))
 
     return original_image, transformed_image
+
 
 # Display welcome message
 screen.fill(WHITE)
