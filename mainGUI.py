@@ -1,6 +1,7 @@
 # mainGUI.py
 
 import pygame
+import sys
 from tkinter import Tk, filedialog
 import cv2
 import numpy as np
@@ -25,86 +26,112 @@ selected_font = pygame.font.Font(None, 40)
 
 # Variables 
 animal_sight_type = None
+text_default_images = font.render("1. Default Images", True, BLACK)
+text_upload_images = font.render("2. Upload Image", True, BLACK)
+text_webcam = font.render("3. Webcam Image", True, BLACK)
+text_exit = font.render("0. Exit", True, BLACK)
 
-# Display menu
-menu_active = True
-while menu_active:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_0:
-                menu_active = False
-            elif event.key == pygame.K_1:
-                menu_active = False
-                animal_sight_type = "Dog"
-            elif event.key == pygame.K_2:
-                menu_active = False
-                animal_sight_type = "Cat"
-            elif event.key == pygame.K_3:
-                menu_active = False
-                animal_sight_type = "Bird"
-            elif event.key == pygame.K_4:
-                menu_active = False
-                animal_sight_type = "Bee"
-            elif event.key == pygame.K_5:
-                menu_active = False
-                animal_sight_type = "Bat"
-            elif event.key == pygame.K_6:
-                menu_active = False
-                animal_sight_type = "Crab"
-            elif event.key == pygame.K_7:
-                menu_active = False
-                animal_sight_type = "Snake"
-
-# Function to display the menu
-def display_menu():
-    screen.fill(WHITE)
-
-    # Display welcome message
-    screen.fill(WHITE)
-    text_welcome = font.render("MENÚ", True, BLACK)
-    screen.blit(text_welcome, (screen_width // 2 - text_welcome.get_width() // 2, 150))
-    pygame.display.flip()
-
-    # Display menu options
-    text_default_images = font.render("Default Images", True, BLACK)
-    text_upload_images = font.render("Upload Image", True, BLACK)
-    text_webcam = font.render("Webcam Image", True, BLACK)
-    screen.blit(text_default_images, (50, 200))
-    screen.blit(text_upload_images, (50, 300))
-    screen.blit(text_webcam, (50, 400))
-
-    pygame.display.flip()
-
-# Function to display the original and transformed images
+# Function to display the images
 def display_images(original_image, transformed_image):
-    screen.fill(WHITE)
-
-    # Display original image on the left
+    # Display original image
     screen.blit(original_image, (50, 50))
 
-    # Display transformed image on the right
+    # Display transformed image
     screen.blit(transformed_image, (550, 50))
 
     # Display navigation bar
     animals = ["Dog", "Cat", "Bird", "Bee", "Bat", "Crab", "Snake"]
     for i, animal in enumerate(animals):
-        text = font.render(animal, True, BLACK)
-        rect = pygame.Rect((i * (screen_width // len(animals)), 0), (screen_width // len(animals), 40))
-        pygame.draw.rect(screen, WHITE, rect)
-        pygame.draw.rect(screen, BLACK, rect, 2)
-        screen.blit(text, (i * (screen_width // len(animals)) + 10, 5))
-
-    # Highlight the selected animal in the navigation bar
-    selected_text = selected_font.render(animal_sight_type or "Default", True, BLACK)
-    screen.blit(selected_text, (screen_width // 2 - selected_text.get_width() // 2, 550))
+        if animal == animal_sight_type:
+            text_animal = selected_font.render(animal, True, BLACK)
+        else:
+            text_animal = font.render(animal, True, BLACK)
+        screen.blit(text_animal, (i * (screen_width // len(animals)), 0))
 
     # Display return to menu button
-    pygame.draw.rect(screen, WHITE, (600, 500, 150, 40))  # Return to Menu Button
-    text_menu = font.render("Return to Menu", True, BLACK)
-    screen.blit(text_menu, (610, 505))
+    text_return = font.render("Return to Menu", True, BLACK)
+    pygame.draw.rect(screen, WHITE, (600, 500, 150, 40))
+    screen.blit(text_return, (600, 500))
+
+    pygame.display.flip()
+
+# Function to display the default images section
+def display_default_images():
+    screen.fill(WHITE)
+    
+    # Display default images
+    original_image, transformed_image = transform_image("images/dog.jpg")
+    display_images(original_image, transformed_image)
+
+# Function to display the upload image section
+def display_upload_image():
+    screen.fill(WHITE)
+    
+    # Open file dialog to get image path
+    root = Tk()
+    root.withdraw()
+    image_path = filedialog.askopenfilename()
+    if image_path:
+        original_image, transformed_image = transform_image(image_path)
+        display_images(original_image, transformed_image)
+
+# Function to display the webcam section
+def display_webcam():
+    screen.fill(WHITE)
+    transformed_image = pygame.Surface((400, 400))
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                cap.release()
+                cv2.destroyAllWindows()
+                pygame.quit()
+                sys.exit()
+
+            # Handling mouse clicks
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                handle_mouse_click(event.pos)
+
+        _, frame = cap.read()
+        cv2.imshow("Webcam", frame)
+
+        # Add transformation to the webcam frame
+        transformed_frame = transform_webcam_image(frame, animal_sight_type)
+
+        # Display the transformed frame
+        pygame.surfarray.blit_array(transformed_image, np.swapaxes(transformed_frame, 0, 1))
+        pygame.display.flip()
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+# Function to handle mouse clicks
+def handle_mouse_click(position):
+    if 50 <= position[0] <= 50 + text_default_images.get_width() and 200 <= position[1] <= 200 + text_default_images.get_height():
+        display_default_images()
+    elif 50 <= position[0] <= 50 + text_upload_images.get_width() and 300 <= position[1] <= 300 + text_upload_images.get_height():
+        display_upload_image()
+    elif 50 <= position[0] <= 50 + text_webcam.get_width() and 400 <= position[1] <= 400 + text_webcam.get_height():
+        display_webcam()
+    elif 50 <= position[0] <= 50 + text_exit.get_width() and 500 <= position[1] <= 500 + text_exit.get_height():
+        pygame.quit()
+        sys.exit()
+
+# Function to display the menu
+def display_menu():
+    screen.fill(WHITE)
+    text_welcome = font.render("MENÚ", True, BLACK)
+    screen.blit(text_welcome, (screen_width // 2 - text_welcome.get_width() // 2, 150))
+    pygame.display.flip()
+
+    menu_options = [text_default_images, text_upload_images, text_webcam, text_exit]
+
+    for i, option in enumerate(menu_options):
+        screen.blit(option, (50, 200 + i * 100))
 
     pygame.display.flip()
 
@@ -132,76 +159,49 @@ def transform_image(image_path):
 
     return original_image, transformed_image
 
-# Main loop
+# Display welcome message
+screen.fill(WHITE)
+text_welcome = font.render("Welcome to the Animal Sight Visualization Program!", True, BLACK)
+text_welcome2 = font.render("Press any key to continue...", True, BLACK)
+screen.blit(text_welcome, (50, 50))
+screen.blit(text_welcome2, (50, 100))
+pygame.display.flip()
+
+# Wait for a key press to continue
+waiting_for_key = True
+while waiting_for_key:
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            waiting_for_key = False
+
+# Display menu
 menu_active = True
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
+            sys.exit()
 
         if menu_active:
             display_menu()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_0:
-                    pygame.quit()
-                elif pygame.K_1 <= event.key <= pygame.K_7:
-                    menu_active = False
-                    animal_sight_type = ["Dog", "Cat", "Bird", "Bee", "Bat", "Crab", "Snake"][event.key - pygame.K_1]
-
-        else:
             # Handling mouse clicks
             if event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
+                handle_mouse_click(event.pos)
 
-                # Check if the return to menu button is clicked
-                if 600 <= x <= 750 and 500 <= y <= 540:
-                    menu_active = True
+            # Handling key presses
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_0 or event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+                elif event.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
+                    if event.key == pygame.K_1:
+                        display_default_images()
+                    elif event.key == pygame.K_2:
+                        display_upload_image()
+                    elif event.key == pygame.K_3:
+                        display_webcam()
+                    menu_active = False
 
-                # Check if the navigation bar is clicked
-                elif 0 <= y <= 40:
-                    animals = ["Dog", "Cat", "Bird", "Bee", "Bat", "Crab", "Snake"]
-                    for i, animal in enumerate(animals):
-                        if i * (screen_width // len(animals)) <= x <= (i + 1) * (screen_width // len(animals)):
-                            animal_sight_type = animal
-                            break
-
-                # Check if the default images button is clicked
-                elif 50 <= y <= 90:
-                    if 50 <= x <= 450:
-                        original_image, transformed_image = transform_image("images/dog.jpg")
-                    elif 550 <= x <= 950:
-                        original_image, transformed_image = transform_image("images/cat.jpg")
-                    
-
-
-
-                # Check if the upload image button is clicked
-                elif 150 <= y <= 190:
-                    root = Tk()
-                    root.withdraw()
-                    image_path = filedialog.askopenfilename()
-                    if image_path:
-                        original_image, transformed_image = transform_image(image_path)
-
-                # Check if the webcam image button is clicked
-                elif 250 <= y <= 290:
-                    cap = cv2.VideoCapture(0)
-                    while True:
-                        _, frame = cap.read()
-                        cv2.imshow("Webcam", frame)
-
-                        # Add transformation to the webcam frame
-                        transformed_frame = transform_webcam_image(frame, animal_sight_type)
-
-                        # Display the transformed frame
-                        pygame.surfarray.blit_array(transformed_image, np.swapaxes(transformed_frame, 0, 1))
-                        pygame.display.flip()
-
-                        if cv2.waitKey(1) & 0xFF == ord('q'):
-                            break
-
-                    cap.release()
-                    cv2.destroyAllWindows()
-
+    pygame.display.flip()
     pygame.time.delay(30)

@@ -5,8 +5,7 @@ import numpy as np
 
 def transform_to_dog_sight(image):
     # Transform image to dog sight
-
-
+    # For now, just return the original image
     return image
 
 def transform_to_cat_sight(image):
