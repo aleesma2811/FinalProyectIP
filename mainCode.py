@@ -4,8 +4,9 @@ import cv2
 import numpy as np
 
 def transform_to_dog_sight(image):
-    # Replace this with actual transformation logic for dog sight
-    # For now, just return the original image
+    # Transform image to dog sight
+
+
     return image
 
 def transform_to_cat_sight(image):
@@ -37,3 +38,10 @@ def transform_to_snake_sight(image):
     # Replace this with actual transformation logic for snake sight
     # For now, just return the original image
     return image
+
+def transform_webcam_image(frame, image):
+    # Replace this with actual transformation logic for webcam image
+    # For now, just return the original image
+    return image
+
+

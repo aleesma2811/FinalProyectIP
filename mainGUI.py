@@ -23,11 +23,8 @@ pygame.display.set_caption("Animal Sight Visualization")
 font = pygame.font.Font(None, 36)
 selected_font = pygame.font.Font(None, 40)
 
-# Display welcome message
-screen.fill(WHITE)
-text_welcome = font.render("Welcome to the Animal Sight Visualization Program!", True, BLACK)
-screen.blit(text_welcome, (50, 50))
-pygame.display.flip()
+# Variables 
+animal_sight_type = None
 
 # Display menu
 menu_active = True
@@ -48,10 +45,28 @@ while menu_active:
             elif event.key == pygame.K_3:
                 menu_active = False
                 animal_sight_type = "Bird"
+            elif event.key == pygame.K_4:
+                menu_active = False
+                animal_sight_type = "Bee"
+            elif event.key == pygame.K_5:
+                menu_active = False
+                animal_sight_type = "Bat"
+            elif event.key == pygame.K_6:
+                menu_active = False
+                animal_sight_type = "Crab"
+            elif event.key == pygame.K_7:
+                menu_active = False
+                animal_sight_type = "Snake"
 
 # Function to display the menu
 def display_menu():
     screen.fill(WHITE)
+
+    # Display welcome message
+    screen.fill(WHITE)
+    text_welcome = font.render("MENÚ", True, BLACK)
+    screen.blit(text_welcome, (screen_width // 2 - text_welcome.get_width() // 2, 150))
+    pygame.display.flip()
 
     # Display menu options
     text_default_images = font.render("Default Images", True, BLACK)
@@ -104,49 +119,89 @@ def transform_image(image_path):
         transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_cat_sight(pygame.surfarray.array3d(original_image)), 0, 1))
     elif animal_sight_type == "Bird":
         transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bird_sight(pygame.surfarray.array3d(original_image)), 0, 1))
-    # Add more cases for other animals
+    elif animal_sight_type == "Bee":
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bee_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+    elif animal_sight_type == "Bat":
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_bat_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+    elif animal_sight_type == "Crab":
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_crab_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+    elif animal_sight_type == "Snake":
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(transform_to_snake_sight(pygame.surfarray.array3d(original_image)), 0, 1))
+    else:
+        transformed_image = pygame.surfarray.make_surface(np.swapaxes(original_image, 0, 1))
 
     return original_image, transformed_image
 
 # Main loop
+menu_active = True
 while True:
-    if menu_active:
-        display_menu()
-    else:
-        original_image, transformed_image = transform_image("images/dog.jpg")  # Change the image path accordingly
-        display_images(original_image, transformed_image)
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = pygame.mouse.get_pos()
+        if menu_active:
+            display_menu()
 
-            if menu_active:
-                if 50 <= x <= 200 and 200 <= y <= 240:  # Default Images
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_0:
+                    pygame.quit()
+                elif pygame.K_1 <= event.key <= pygame.K_7:
                     menu_active = False
-                elif 50 <= x <= 200 and 300 <= y <= 340:  # Upload Image
-                    root = Tk()
-                    root.withdraw()
-                    file_path = filedialog.askopenfilename(title="Select Image File", filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
-                    root.destroy()
-                    if file_path:
-                        menu_active = False
-                        original_image, transformed_image = transform_image(file_path)
-                elif 50 <= x <= 200 and 400 <= y <= 440:  # Webcam Image
-                    menu_active = False
+                    animal_sight_type = ["Dog", "Cat", "Bird", "Bee", "Bat", "Crab", "Snake"][event.key - pygame.K_1]
 
-            elif not menu_active:
-                # Check if a navigation bar option is clicked
-                animals = ["Dog", "Cat", "Bird", "Bee", "Bat", "Crab", "Snake"]
-                for i, animal in enumerate(animals):
-                    if i * (screen_width // len(animals)) <= x <= (i + 1) * (screen_width // len(animals)) and 0 <= y <= 40:
-                        animal_sight_type = animal
-                        original_image, transformed_image = transform_image("images/dog.jpg")  # Change the image path accordingly
-                        break
+        else:
+            # Handling mouse clicks
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+
                 # Check if the return to menu button is clicked
                 if 600 <= x <= 750 and 500 <= y <= 540:
                     menu_active = True
+
+                # Check if the navigation bar is clicked
+                elif 0 <= y <= 40:
+                    animals = ["Dog", "Cat", "Bird", "Bee", "Bat", "Crab", "Snake"]
+                    for i, animal in enumerate(animals):
+                        if i * (screen_width // len(animals)) <= x <= (i + 1) * (screen_width // len(animals)):
+                            animal_sight_type = animal
+                            break
+
+                # Check if the default images button is clicked
+                elif 50 <= y <= 90:
+                    if 50 <= x <= 450:
+                        original_image, transformed_image = transform_image("images/dog.jpg")
+                    elif 550 <= x <= 950:
+                        original_image, transformed_image = transform_image("images/cat.jpg")
+                    
+
+
+
+                # Check if the upload image button is clicked
+                elif 150 <= y <= 190:
+                    root = Tk()
+                    root.withdraw()
+                    image_path = filedialog.askopenfilename()
+                    if image_path:
+                        original_image, transformed_image = transform_image(image_path)
+
+                # Check if the webcam image button is clicked
+                elif 250 <= y <= 290:
+                    cap = cv2.VideoCapture(0)
+                    while True:
+                        _, frame = cap.read()
+                        cv2.imshow("Webcam", frame)
+
+                        # Add transformation to the webcam frame
+                        transformed_frame = transform_webcam_image(frame, animal_sight_type)
+
+                        # Display the transformed frame
+                        pygame.surfarray.blit_array(transformed_image, np.swapaxes(transformed_frame, 0, 1))
+                        pygame.display.flip()
+
+                        if cv2.waitKey(1) & 0xFF == ord('q'):
+                            break
+
+                    cap.release()
+                    cv2.destroyAllWindows()
 
     pygame.time.delay(30)
